@@ -21,9 +21,9 @@ float ZOOM = 1;
 
 int sizeText = 10;
 float AXES_CENTER[2] = {(SCREEN_WIDTH/2),SCREEN_HEIGHT/2};
-const int AXES_COLOR[3] = {0,0,0};
-float AXES_VALUES_X[3] = {-20,10,0.5}; // min, max, step
-float AXES_VALUES_Y[3] = {-10,10,4};
+const int AXES_COLOR[3] = {0,100,100};
+float AXES_VALUES_X[3] = {-5,5,0.5}; // min, max, step
+float AXES_VALUES_Y[3] = {-5,5,1};
 float x_unity;
 float y_unity;
 //Les surfaces que nous allons utiliser
@@ -92,7 +92,24 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination 
 	//On blitte la surface
 	SDL_BlitSurface( source, NULL, destination, &offset );
 }
-
+void pointer_precision(SDL_Surface* screen, const int* color){
+    int x = event.motion.x;
+    if(x>AXES_MARGE && x<SCREEN_WIDTH-AXES_MARGE){
+        for(int i=AXES_MARGE;i<SCREEN_HEIGHT-AXES_MARGE;i++){
+            putpixel(screen,x, i, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
+        }
+    }
+    int y = event.motion.y;
+    if(y>AXES_MARGE && y<SCREEN_HEIGHT-AXES_MARGE){
+        for(int i=AXES_MARGE;i<SCREEN_WIDTH-AXES_MARGE;i++){
+            putpixel(screen,i, y, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
+        }
+    }
+    char xy[100];
+    sprintf(xy, "%.5f ; %.5f",(x-AXES_CENTER[0])/x_unity, -1*(y-AXES_CENTER[1])/y_unity);
+    texte = TTF_RenderText_Solid(police, xy, {200,0,0});
+    apply_surface(SCREEN_WIDTH-texte->w-10, SCREEN_HEIGHT-texte->h-5, texte, screen );
+}
 void set_point(SDL_Surface* screen, int** coord, const int* color){
     int *point = (int *)coord;
     for(int z = 0; z < 4; ++z)
@@ -109,6 +126,9 @@ void set_point(SDL_Surface* screen, int** coord, const int* color){
         }
         point += 3;
     }
+}
+void relier2p(SDL_Surface* screen,int x1, int y1, int x2, int y2, const int* color){
+    /*A IMPLEMENTER*/
 }
 
 void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
@@ -281,6 +301,8 @@ int main( int argc, char *argv[ ] ){
     set_point(screen, (int **)points, AXES_COLOR);
 
     int move_cursor=0, my_x=0, my_y=0, new_x=0, new_y=0, test=0;
+            bool precisionMode = false;
+
     while (continuer){
         if( SDL_Flip( screen ) == -1 ) {
             return EXIT_FAILURE;
@@ -298,11 +320,16 @@ int main( int argc, char *argv[ ] ){
                     my_y = event.motion.y;
                     break;
                 }
+                if( event.button.button == SDL_BUTTON_RIGHT ){
+                    precisionMode = !precisionMode;
+                    break;
+                }
             case SDL_MOUSEBUTTONUP:
                 if( event.button.button == SDL_BUTTON_LEFT ){
                     move_cursor = 0;
                     break;
                 }
+
             case SDL_MOUSEMOTION:
                 new_x = event.motion.x;
                 new_y = event.motion.y;
@@ -319,11 +346,7 @@ int main( int argc, char *argv[ ] ){
         SDL_FillRect(screen, NULL, 0xf0f0f0); // 0xFFFFFF = white in RGB, NULL = full window
         set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, false);
         set_point(screen,(int**) points, AXES_COLOR);
-        char yolo[100];
-        sprintf(yolo, "%.5f", x_unity);
-        texte = TTF_RenderText_Solid(police, yolo, {200,0,0});
-        apply_surface( 300, 300, texte, screen );
-
+        if(precisionMode)pointer_precision(screen,AXES_COLOR);
         //SDL_Flip(screen);
     }
 	//Libération des surfaces
