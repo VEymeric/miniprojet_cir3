@@ -3,14 +3,15 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <math.h>
 #include <vector>
 //#pragma comment (lib, "sdl.lib")
 //#pragma comment (lib, "sdlmain.lib")
-//using namespace std;
-const float SCREEN_WIDTH = 1000;
-const float SCREEN_HEIGHT = 500;
+using namespace std;
+const float SCREEN_WIDTH = 600;
+const float SCREEN_HEIGHT = 600;
 const int SCREEN_BPP = 32;
 
 const int AXES_ARROW = 5;
@@ -21,7 +22,7 @@ float ZOOM = 1;
 
 int sizeText = 10;
 float AXES_CENTER[2] = {(SCREEN_WIDTH/2),SCREEN_HEIGHT/2};
-const int AXES_COLOR[3] = {0,100,100};
+const int AXES_COLOR[3] = {0,0,0};
 float AXES_VALUES_X[3] = {-5,5,0.5}; // min, max, step
 float AXES_VALUES_Y[3] = {-5,5,1};
 float x_unity;
@@ -85,6 +86,8 @@ void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel){
     }
 }
 void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination ) {
+
+
 	SDL_Rect offset;
 
 	offset.x = x;
@@ -92,15 +95,100 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination 
 	//On blitte la surface
 	SDL_BlitSurface( source, NULL, destination, &offset );
 }
+void debugg(SDL_Surface* screen, float calcul){
+    char xy[100];
+    sprintf(xy, "%.5f",calcul);
+    texte = TTF_RenderText_Solid(police, xy, {200,0,0});
+    apply_surface(50, SCREEN_HEIGHT-texte->h-5, texte, screen );
+}
+void setPixel(int x, int y, Uint32 coul){
+ SDL_Surface*ecran;
+ecran = SDL_SetVideoMode(640,480,32,SDL_HWSURFACE);
+  *((Uint32*)(ecran->pixels) + x + y * ecran->w) = coul;
+}
+void setPixelVerif(int x, int y, Uint32 coul){
+ SDL_Surface*ecran;
+ecran = SDL_SetVideoMode(640,480,32,SDL_HWSURFACE);
+  if (x >= 0 && x < ecran->w &&
+      y >= 0 && y < ecran->h)
+    setPixel(x, y, coul);
+}
+void echangerEntiers(int* x, int* y){
+  int t = *x;
+  *x = *y;
+  *y = t;
+}
+void ligne(int x1, int y1, int x2, int y2, Uint32 coul){
+  int d, dx, dy, aincr, bincr, xincr, yincr, x, y;
+
+  if (abs(x2 - x1) < abs(y2 - y1)) {
+    /* parcours par l'axe vertical */
+
+    if (y1 > y2) {
+      echangerEntiers(&x1, &x2);
+      echangerEntiers(&y1, &y2);
+    }
+
+    xincr = x2 > x1 ? 1 : -1;
+    dy = y2 - y1;
+    dx = abs(x2 - x1);
+    d = 2 * dx - dy;
+    aincr = 2 * (dx - dy);
+    bincr = 2 * dx;
+    x = x1;
+    y = y1;
+
+    setPixelVerif(x, y, coul);
+
+    for (y = y1+1; y <= y2; ++y) {
+      if (d >= 0) {
+    x += xincr;
+    d += aincr;
+      } else
+    d += bincr;
+
+      setPixelVerif(x, y, coul);
+    }
+
+  } else {
+    /* parcours par l'axe horizontal */
+
+    if (x1 > x2) {
+      echangerEntiers(&x1, &x2);
+      echangerEntiers(&y1, &y2);
+    }
+
+    yincr = y2 > y1 ? 1 : -1;
+    dx = x2 - x1;
+    dy = abs(y2 - y1);
+    d = 2 * dy - dx;
+    aincr = 2 * (dy - dx);
+    bincr = 2 * dy;
+    x = x1;
+    y = y1;
+
+    setPixelVerif(x, y, coul);
+
+    for (x = x1+1; x <= x2; ++x) {
+      if (d >= 0) {
+    y += yincr;
+    d += aincr;
+      } else
+    d += bincr;
+
+      setPixelVerif(x, y, coul);
+    }
+  }
+}
 void pointer_precision(SDL_Surface* screen, const int* color){
     int x = event.motion.x;
-    if(x>AXES_MARGE && x<SCREEN_WIDTH-AXES_MARGE){
+    if(x>=AXES_MARGE && x<=SCREEN_WIDTH-AXES_MARGE){
         for(int i=AXES_MARGE;i<SCREEN_HEIGHT-AXES_MARGE;i++){
             putpixel(screen,x, i, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
     }
     int y = event.motion.y;
-    if(y>AXES_MARGE && y<SCREEN_HEIGHT-AXES_MARGE){
+    if(y>=AXES_MARGE && y<=SCREEN_HEIGHT-AXES_MARGE){
         for(int i=AXES_MARGE;i<SCREEN_WIDTH-AXES_MARGE;i++){
             putpixel(screen,i, y, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
@@ -110,13 +198,72 @@ void pointer_precision(SDL_Surface* screen, const int* color){
     texte = TTF_RenderText_Solid(police, xy, {200,0,0});
     apply_surface(SCREEN_WIDTH-texte->w-10, SCREEN_HEIGHT-texte->h-5, texte, screen );
 }
-void set_point(SDL_Surface* screen, int** coord, const int* color){
-    int *point = (int *)coord;
-    for(int z = 0; z < 4; ++z)
+void SDL_PutPixel32(SDL_Surface *surface, int x, int y, Uint32 pixel){
+    Uint8 *p = (Uint8*)surface->pixels + y * surface->pitch + x * 4;
+    *(Uint32*)p = pixel;
+}
+Uint32 SDL_GetPixel32(SDL_Surface *surface, int x, int y){
+    Uint8 *p = (Uint8*)surface->pixels + y * surface->pitch + x * 4;
+    return *(Uint32*)p;
+}
+void Line(SDL_Surface* surf,int x1,int y1, int x2,int y2,Uint32 couleur){
+  int x,y;
+  int Dx,Dy;
+  int xincr,yincr;
+  int erreur;
+  int i;
+
+  Dx = abs(x2-x1);
+  Dy = abs(y2-y1);
+  if(x1<x2)
+    xincr = 1;
+  else
+    xincr = -1;
+  if(y1<y2)
+    yincr = 1;
+  else
+    yincr = -1;
+
+  x = x1;
+  y = y1;
+  if(Dx>Dy)
     {
-        int x = point[0];
-        int y = point[1];
-        int r = point[2];
+      erreur = Dx/2;
+      for(i=0;i<Dx;i++)
+        {
+          x += xincr;
+          erreur += Dy;
+          if(erreur>Dx)
+            {
+              erreur -= Dx;
+              y += yincr;
+            }
+        SDL_PutPixel32(surf,x, y,couleur);
+        }
+    }
+  else
+    {
+      erreur = Dy/2;
+      for(i=0;i<Dy;i++)
+        {
+          y += yincr;
+          erreur += Dx;
+          if(erreur>Dy)
+            {
+              erreur -= Dy;
+              x += xincr;
+            }
+        SDL_PutPixel32(surf,x, y,couleur);
+        }
+    }
+    SDL_PutPixel32(surf,x1,y1,couleur);
+    SDL_PutPixel32(surf,x2,y2,couleur);
+}
+void set_point(SDL_Surface* screen,vector< vector<double> >points, const int* color, int ligne){
+    for(int z = 0; z < ligne; ++z){
+        double x = points[z][0];
+        double y = points[z][1];
+        int r = 3;
         for(int i=-r; i <= r ; i++){
             for(int j=-r; j <= r ; j++){
                 if(AXES_CENTER[0]+x*x_unity<=SCREEN_WIDTH-AXES_MARGE && AXES_CENTER[0]+x*x_unity>=AXES_MARGE && AXES_CENTER[1]-y*y_unity>=AXES_MARGE && AXES_CENTER[1]-y*y_unity<=SCREEN_HEIGHT-AXES_MARGE){
@@ -124,13 +271,27 @@ void set_point(SDL_Surface* screen, int** coord, const int* color){
                 }
             }
         }
-        point += 3;
     }
 }
-void relier2p(SDL_Surface* screen,int x1, int y1, int x2, int y2, const int* color){
-    /*A IMPLEMENTER*/
-}
+void convert_p_to_px(SDL_Surface* screen,int x1, int y1, int x2, int y2){
 
+}
+void relierP(SDL_Surface* screen,vector< vector<double> >points, const int* color, int ligne){
+    float x_min = -1*(AXES_CENTER[0]-AXES_MARGE)/x_unity;
+    float x_max = (SCREEN_WIDTH-AXES_CENTER[0]-AXES_MARGE)/x_unity;
+    float y_max = (AXES_CENTER[1]-AXES_MARGE)/y_unity;
+    float y_min = -1*(SCREEN_HEIGHT-AXES_CENTER[1]-AXES_MARGE)/y_unity;
+    for(int z = 0; z < ligne-1; ++z){
+        double x1 = AXES_CENTER[0]+points[z][0]*x_unity;
+        double x2 = AXES_CENTER[0]+points[z+1][0]*x_unity;
+        double y1 = AXES_CENTER[1]-points[z][1]*y_unity;
+        double y2 = AXES_CENTER[1]-points[z+1][1]*y_unity;
+        if(x1>=AXES_MARGE && x2<=SCREEN_WIDTH-AXES_MARGE){
+            if(y1<=SCREEN_HEIGHT-AXES_MARGE && y1 >= AXES_MARGE  && y2<=SCREEN_HEIGHT-AXES_MARGE && y2 >= AXES_MARGE)
+            Line(screen,x1,y1,x2,y2,0x000000);
+        }
+    }
+}
 void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     x_unity = (SCREEN_WIDTH-2*AXES_MARGE)/(AXES_VALUES_X[1]-AXES_VALUES_X[0]);
     y_unity = (SCREEN_HEIGHT-2*AXES_MARGE)/(AXES_VALUES_Y[1]-AXES_VALUES_Y[0]);
@@ -138,13 +299,6 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     //float   marge_max = AXES_VALUES_X[1];
     float position_x0 = (int)AXES_CENTER[0];
     float position_y0 = (int)AXES_CENTER[1];
-
-    if(start)position_x0 = -1.00*(AXES_VALUES_X[0])*(x_unity);
-    if(start && AXES_VALUES_Y[0]<0 && AXES_VALUES_Y[1]>0) position_y0 = -1.00*(AXES_VALUES_Y[0])*(y_unity);
-    if(start){
-        AXES_CENTER[0] = position_x0;
-        AXES_CENTER[1] = (2+y_unity)*AXES_VALUES_Y[1];
-    }
 
     { /* MES X TAVU */
     // PARTIE AVANT 0
@@ -269,9 +423,12 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
 
 
 int main( int argc, char *argv[ ] ){
+    fstream fichier("result.txt");
+    int  ligne=0;
+    string x,y,values;
+    vector< vector<double> >points;
     bool continuer = true;
     SDL_Surface *screen;
-    SDL_Rect pointer;
     if( SDL_Init( SDL_INIT_VIDEO ) == -1 ){
         printf( "Can't init SDL:  %s\n", SDL_GetError( ) );
         return EXIT_FAILURE;
@@ -292,15 +449,26 @@ int main( int argc, char *argv[ ] ){
     SDL_Flip(screen);
 	SDL_WM_SetCaption( "LA SDL C RIGOLO", NULL ); //titre fenetre
     set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, true);
-    int points[][3] = {
-        {0,0,3},
-        {1,1,3},
-        {2,2,3},
-        {-1,-1,3}
-    };
-    set_point(screen, (int **)points, AXES_COLOR);
+    if(fichier){
+        while(getline(fichier,values)){
+            ligne++;
+            x = values;
+            getline(fichier,values);
+            y = values;
+            vector<double> row;
+            row.push_back(atof(x.c_str()));
+            row.push_back(atof(y.c_str()));
+            points.push_back(row);
+        }
+        fichier.close();
+    }
+    else{
+        cout << "Erreur" <<endl;
+    }
 
-    int move_cursor=0, my_x=0, my_y=0, new_x=0, new_y=0, test=0;
+    set_point(screen, points, AXES_COLOR,ligne);
+
+    int move_cursor=0, my_x=0, my_y=0, new_x=0, new_y=0;
             bool precisionMode = false;
 
     while (continuer){
@@ -345,8 +513,10 @@ int main( int argc, char *argv[ ] ){
 
         SDL_FillRect(screen, NULL, 0xf0f0f0); // 0xFFFFFF = white in RGB, NULL = full window
         set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, false);
-        set_point(screen,(int**) points, AXES_COLOR);
+        set_point(screen,points, AXES_COLOR, ligne);
         if(precisionMode)pointer_precision(screen,AXES_COLOR);
+        relierP(screen, points, AXES_COLOR, ligne);
+        //debugg(screen);
         //SDL_Flip(screen);
     }
 	//Libération des surfaces
