@@ -5,7 +5,7 @@ code lisible mais esthétiquement améliorable.
 
 à ajouter : 
 
-relier les points
+relier les points <b>done</b>
 
 points / fonctions depuis le bison
 
