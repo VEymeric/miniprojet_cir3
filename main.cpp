@@ -293,8 +293,8 @@ void relierP(SDL_Surface* screen,vector< vector<double> >points, const int* colo
     }
 }
 void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
-    x_unity = (SCREEN_WIDTH-2*AXES_MARGE)/(AXES_VALUES_X[1]-AXES_VALUES_X[0]);
-    y_unity = (SCREEN_HEIGHT-2*AXES_MARGE)/(AXES_VALUES_Y[1]-AXES_VALUES_Y[0]);
+    x_unity = (int)((SCREEN_WIDTH-2*AXES_MARGE)/(AXES_VALUES_X[1]-AXES_VALUES_X[0])*ZOOM);
+    y_unity = (int)((SCREEN_HEIGHT-2*AXES_MARGE)/(AXES_VALUES_Y[1]-AXES_VALUES_Y[0])*ZOOM);
     //float   marge_min = AXES_VALUES_X[0];
     //float   marge_max = AXES_VALUES_X[1];
     float position_x0 = (int)AXES_CENTER[0];
@@ -302,9 +302,9 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
 
     { /* MES X TAVU */
     // PARTIE AVANT 0
-    for(int i=position_x0; i>=AXES_MARGE; i-=x_unity*AXES_VALUES_X[2]){ // baton baton !
+    for(float i=position_x0; i>=AXES_MARGE; i-=x_unity*AXES_VALUES_X[2]){ // baton baton !
         if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
-            for(int taille=0; taille<=AXES_ARROW; taille++){
+            for(float taille=0; taille<=AXES_ARROW; taille++){
                 putpixel(screen,i, taille+AXES_MARGE, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                     if(AXES_CENTER[1]>AXES_MARGE && AXES_CENTER[1]<SCREEN_HEIGHT-AXES_MARGE){
                     putpixel(screen,i, (int)position_y0+taille, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
@@ -316,9 +316,9 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     }
 
     //PARTIE APRES 0
-    for(int i=position_x0; i<=SCREEN_WIDTH-AXES_MARGE; i+=x_unity*AXES_VALUES_X[2]){ // baton baton !
+    for(float i=position_x0; i<=SCREEN_WIDTH-AXES_MARGE; i+=x_unity*AXES_VALUES_X[2]){ // baton baton !
         if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
-            for(int taille=0; taille<=AXES_ARROW; taille++){
+            for(float taille=0; taille<=AXES_ARROW; taille++){
                 putpixel(screen,i, taille+AXES_MARGE, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                 if(AXES_CENTER[1]>AXES_MARGE && AXES_CENTER[1]<SCREEN_HEIGHT-AXES_MARGE){
                     putpixel(screen,i, (int)position_y0+taille, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
@@ -330,11 +330,11 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     }
     //AXE X + ARROW
     if(AXES_CENTER[1]>AXES_MARGE && AXES_CENTER[1]<SCREEN_HEIGHT-AXES_MARGE){
-        for(int i=AXES_MARGE; i<=SCREEN_WIDTH-AXES_MARGE; i++ ){
+        for(float i=AXES_MARGE; i<=SCREEN_WIDTH-AXES_MARGE; i++ ){
             putpixel(screen,i, position_y0, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
-        for(int i=SCREEN_WIDTH-AXES_MARGE; i<=SCREEN_WIDTH+AXES_ARROW; i++ ){
-            for( int j=SCREEN_WIDTH-AXES_MARGE-i+AXES_ARROW ; j>=0 ; j--){
+        for(float i=SCREEN_WIDTH-AXES_MARGE; i<=SCREEN_WIDTH+AXES_ARROW; i++ ){
+            for( float j=SCREEN_WIDTH-AXES_MARGE-i+AXES_ARROW ; j>=0 ; j--){
                 putpixel(screen,i, position_y0+j, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                 putpixel(screen,i, position_y0-j, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
             }
@@ -346,7 +346,7 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     { /* MES Y TAVU */
     for(int i=position_y0; i>=AXES_MARGE; i-=y_unity*AXES_VALUES_Y[2]){ // baton baton !
         if(i<=SCREEN_HEIGHT-AXES_MARGE && i>=AXES_MARGE){
-            for(int taille=0; taille<=AXES_ARROW; taille++){
+            for(float taille=0; taille<=AXES_ARROW; taille++){
                 putpixel(screen,(taille+AXES_MARGE), i,SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                 if(AXES_CENTER[0]>AXES_MARGE && AXES_CENTER[0]<SCREEN_WIDTH-AXES_MARGE){
                     putpixel(screen,((int)position_x0+taille), i, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
@@ -356,9 +356,9 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
             }
         }
     }
-    for(int i=position_y0; i<=SCREEN_WIDTH-AXES_MARGE; i+=y_unity*AXES_VALUES_Y[2]){ // baton baton !
+    for(float i=position_y0; i<=SCREEN_WIDTH-AXES_MARGE; i+=y_unity*AXES_VALUES_Y[2]){ // baton baton !
         if(i<=SCREEN_HEIGHT-AXES_MARGE && i>=AXES_MARGE){
-            for(int taille=0; taille<=AXES_ARROW; taille++){
+            for(float taille=0; taille<=AXES_ARROW; taille++){
                 putpixel(screen,(taille+AXES_MARGE), i,SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                 if(AXES_CENTER[0]>AXES_MARGE && AXES_CENTER[0]<SCREEN_WIDTH-AXES_MARGE){
                     putpixel(screen,((int)position_x0+taille), i, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
@@ -390,7 +390,7 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
                     apply_surface( i-texte->w/2+1, AXES_MARGE-15, texte, screen );
                 }
             }
-        for(int i=position_x0; i<=SCREEN_WIDTH-AXES_MARGE; i+=x_unity){
+        for(float i=position_x0; i<=SCREEN_WIDTH-AXES_MARGE; i+=x_unity){
             if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
                 char yolo[100];
                 sprintf(yolo, "%d", (int)(((float)i-position_x0)/x_unity));
@@ -400,17 +400,15 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
         }
     }
     { //TEXTE GAUCHE
-        for(int i=position_y0; i>=AXES_MARGE; i-=y_unity){
+        for(float i=position_y0; i>=AXES_MARGE; i-=y_unity){
             if(i<=SCREEN_HEIGHT-AXES_MARGE && i>=AXES_MARGE){
                 char yolo[100];
-                    if((int)(-1*((float)i-position_y0)/y_unity) == (-1*((float)i-position_y0)/y_unity)){
-                        sprintf(yolo, "%d", (int)(-1*((float)i-position_y0)/y_unity));
-                        texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
-                        apply_surface(AXES_MARGE-15, i-texte->h/2+1, texte, screen );
-                    }
-                }
+                sprintf(yolo, "%d", (int)(-1*((float)i-position_y0)/y_unity));
+                texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
+                apply_surface(AXES_MARGE-15, i-texte->h/2+1, texte, screen );
             }
-        for(int i=position_y0; i<=SCREEN_WIDTH-AXES_MARGE; i+=y_unity){
+        }
+        for(float i=position_y0; i<=SCREEN_WIDTH-AXES_MARGE; i+=y_unity){
             if(i<=SCREEN_HEIGHT-AXES_MARGE && i>=AXES_MARGE){
                 char yolo[100];
                 sprintf(yolo, "%d", (int)(-1*((float)i-position_y0)/y_unity));
@@ -492,16 +490,22 @@ int main( int argc, char *argv[ ] ){
                     precisionMode = !precisionMode;
                     break;
                 }
+                if( event.button.button == SDL_BUTTON_WHEELUP ){
+                    if(ZOOM < 2)ZOOM += 0.1;
+                    break;
+                }
+                if( event.button.button == SDL_BUTTON_WHEELDOWN ){
+                    if(ZOOM > 0.5)ZOOM -= 0.1;
+                    break;
+                }
             case SDL_MOUSEBUTTONUP:
                 if( event.button.button == SDL_BUTTON_LEFT ){
                     move_cursor = 0;
                     break;
                 }
-
             case SDL_MOUSEMOTION:
                 new_x = event.motion.x;
                 new_y = event.motion.y;
-                //int pointer_color[3] = {50,50,50};
                 if(move_cursor == 1){
                     AXES_CENTER[0] = AXES_CENTER[0] - my_x + new_x;
                     AXES_CENTER[1] = AXES_CENTER[1] - my_y + new_y;
@@ -516,7 +520,7 @@ int main( int argc, char *argv[ ] ){
         set_point(screen,points, AXES_COLOR, ligne);
         if(precisionMode)pointer_precision(screen,AXES_COLOR);
         relierP(screen, points, AXES_COLOR, ligne);
-        //debugg(screen);
+        debugg(screen, x_unity);
         //SDL_Flip(screen);
     }
 	//Libération des surfaces
