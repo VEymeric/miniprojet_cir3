@@ -21,8 +21,8 @@ float ZOOM = 1;
 int sizeText = 10;
 float AXES_CENTER[2] = {(SCREEN_WIDTH/2),SCREEN_HEIGHT/2};
 const int AXES_COLOR[3] = {0,0,0};
-float AXES_VALUES_X[3] = {1,2,1}; // min, max, step
-float AXES_VALUES_Y[3] = {0,9,1};
+float AXES_VALUES_X[3] = {-10,10,1}; // min, max, step
+float AXES_VALUES_Y[3] = {-10,10,1};
 float x_unity;
 float y_unity;
 //Les surfaces que nous allons utiliser
@@ -547,7 +547,7 @@ int main( int argc, char *argv[ ] ){
             Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
-        if(nbFonction>0) debugg(screen, nbFonction==fonctions[0].size()); else debugg(screen, 0);
+        debugg(screen, fonctions.size());
         //SDL_Flip(screen);
     }
 	//Libération des surfaces
