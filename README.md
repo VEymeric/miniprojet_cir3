@@ -3,12 +3,16 @@ théorie des langages
 
 code lisible mais esthétiquement améliorable.
 
-à ajouter : 
+derniers ajouts : 
 
-relier les points <b>done</b>
+dégradé (r->v->b) en fonction du nombre de fonctions.
 
-points / fonctions depuis le bison
+Dans le fichierResult, il faut un # à la fin de chaque fonctions.
 
-aire de la courbe
+Ce qu'il manque : 
 
-zoom / dezoom à affecter.
+Gestion des NaN
+
+Batman
+
+Résolution installation ttf -> Gestion de l'affichage des nombres sur un dezoom
