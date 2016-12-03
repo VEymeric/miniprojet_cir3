@@ -1,15 +1,15 @@
 # miniprojet_cir3
-théorie des langages
+*théorie des langages*
 
 code lisible mais esthétiquement améliorable.
 
-derniers ajouts : 
+*derniers ajouts :* 
 
 dégradé (r->v->b) en fonction du nombre de fonctions.
 
 Dans le fichierResult, il faut un # à la fin de chaque fonctions.
 
-Ce qu'il manque : 
+*Ce qu'il manque : *
 
 Gestion des NaN
 
