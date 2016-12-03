@@ -7,8 +7,6 @@
 #include <string>
 #include <math.h>
 #include <vector>
-//#pragma comment (lib, "sdl.lib")
-//#pragma comment (lib, "sdlmain.lib")
 using namespace std;
 const float SCREEN_WIDTH = 600;
 const float SCREEN_HEIGHT = 600;
@@ -23,15 +21,14 @@ float ZOOM = 1;
 int sizeText = 10;
 float AXES_CENTER[2] = {(SCREEN_WIDTH/2),SCREEN_HEIGHT/2};
 const int AXES_COLOR[3] = {0,0,0};
-float AXES_VALUES_X[3] = {-5,5,0.5}; // min, max, step
-float AXES_VALUES_Y[3] = {-5,5,1};
+float AXES_VALUES_X[3] = {1,2,1}; // min, max, step
+float AXES_VALUES_Y[3] = {0,9,1};
 float x_unity;
 float y_unity;
 //Les surfaces que nous allons utiliser
 SDL_Surface *message = NULL;
 SDL_Surface *texte;
 SDL_Surface *texte2 = NULL;
-
 SDL_Surface *background = NULL;
 SDL_Surface *screen = NULL;
 TTF_Font *police = NULL;
@@ -260,10 +257,11 @@ void Line(SDL_Surface* surf,int x1,int y1, int x2,int y2,Uint32 couleur){
     SDL_PutPixel32(surf,x2,y2,couleur);
 }
 void set_point(SDL_Surface* screen,vector< vector<double> >points, const int* color, int ligne){
+    if(points[0].size() == 0)return;
     for(int z = 0; z < ligne; ++z){
         double x = points[z][0];
         double y = points[z][1];
-        int r = 3;
+        int r = 0;
         for(int i=-r; i <= r ; i++){
             for(int j=-r; j <= r ; j++){
                 if(AXES_CENTER[0]+x*x_unity<=SCREEN_WIDTH-AXES_MARGE && AXES_CENTER[0]+x*x_unity>=AXES_MARGE && AXES_CENTER[1]-y*y_unity>=AXES_MARGE && AXES_CENTER[1]-y*y_unity<=SCREEN_HEIGHT-AXES_MARGE){
@@ -273,14 +271,11 @@ void set_point(SDL_Surface* screen,vector< vector<double> >points, const int* co
         }
     }
 }
-void convert_p_to_px(SDL_Surface* screen,int x1, int y1, int x2, int y2){
-
-}
-void relierP(SDL_Surface* screen,vector< vector<double> >points, const int* color, int ligne){
-    float x_min = -1*(AXES_CENTER[0]-AXES_MARGE)/x_unity;
-    float x_max = (SCREEN_WIDTH-AXES_CENTER[0]-AXES_MARGE)/x_unity;
-    float y_max = (AXES_CENTER[1]-AXES_MARGE)/y_unity;
-    float y_min = -1*(SCREEN_HEIGHT-AXES_CENTER[1]-AXES_MARGE)/y_unity;
+void relierP(SDL_Surface* screen,vector< vector<double> >points, Uint32 coul, int ligne){
+    //float x_min = -1*(AXES_CENTER[0]-AXES_MARGE)/x_unity;
+    //float x_max = (SCREEN_WIDTH-AXES_CENTER[0]-AXES_MARGE)/x_unity;
+    //float y_max = (AXES_CENTER[1]-AXES_MARGE)/y_unity;
+    //float y_min = -1*(SCREEN_HEIGHT-AXES_CENTER[1]-AXES_MARGE)/y_unity;
     for(int z = 0; z < ligne-1; ++z){
         double x1 = AXES_CENTER[0]+points[z][0]*x_unity;
         double x2 = AXES_CENTER[0]+points[z+1][0]*x_unity;
@@ -288,7 +283,7 @@ void relierP(SDL_Surface* screen,vector< vector<double> >points, const int* colo
         double y2 = AXES_CENTER[1]-points[z+1][1]*y_unity;
         if(x1>=AXES_MARGE && x2<=SCREEN_WIDTH-AXES_MARGE){
             if(y1<=SCREEN_HEIGHT-AXES_MARGE && y1 >= AXES_MARGE  && y2<=SCREEN_HEIGHT-AXES_MARGE && y2 >= AXES_MARGE)
-            Line(screen,x1,y1,x2,y2,0x000000);
+                Line(screen,x1,y1,x2,y2,coul);
         }
     }
 }
@@ -299,7 +294,6 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     //float   marge_max = AXES_VALUES_X[1];
     float position_x0 = (int)AXES_CENTER[0];
     float position_y0 = (int)AXES_CENTER[1];
-
     { /* MES X TAVU */
     // PARTIE AVANT 0
     for(float i=position_x0; i>=AXES_MARGE; i-=x_unity*AXES_VALUES_X[2]){ // baton baton !
@@ -329,7 +323,7 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
         }
     }
     //AXE X + ARROW
-    if(AXES_CENTER[1]>AXES_MARGE && AXES_CENTER[1]<SCREEN_HEIGHT-AXES_MARGE){
+    if(AXES_CENTER[1]>=AXES_MARGE && AXES_CENTER[1]<=SCREEN_HEIGHT-AXES_MARGE){
         for(float i=AXES_MARGE; i<=SCREEN_WIDTH-AXES_MARGE; i++ ){
             putpixel(screen,i, position_y0, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
@@ -368,7 +362,7 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
             }
         }
     }
-    if(AXES_CENTER[0]>AXES_MARGE && AXES_CENTER[0]<SCREEN_WIDTH-AXES_MARGE){
+    if(AXES_CENTER[0]>=AXES_MARGE && AXES_CENTER[0]<=SCREEN_WIDTH-AXES_MARGE){
         for(int i=AXES_MARGE; i<=SCREEN_HEIGHT-AXES_MARGE; i++ ){
             putpixel(screen,position_x0, i, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
@@ -419,12 +413,17 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     }
 }
 
-
 int main( int argc, char *argv[ ] ){
-    fstream fichier("result.txt");
+    fstream fichier("fichierResultat.txt");
+    fstream option("option.txt");
+
     int  ligne=0;
-    string x,y,values;
+    string values;
+    //float min=0,max=0,
+    float nbFonction=0;
     vector< vector<double> >points;
+    vector<vector< vector<double> > >fonctions;
+
     bool continuer = true;
     SDL_Surface *screen;
     if( SDL_Init( SDL_INIT_VIDEO ) == -1 ){
@@ -447,29 +446,45 @@ int main( int argc, char *argv[ ] ){
     SDL_Flip(screen);
 	SDL_WM_SetCaption( "LA SDL C RIGOLO", NULL ); //titre fenetre
     set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, true);
-    if(fichier){
-        while(getline(fichier,values)){
-            ligne++;
-            x = values;
-            getline(fichier,values);
-            y = values;
-            vector<double> row;
-            row.push_back(atof(x.c_str()));
-            row.push_back(atof(y.c_str()));
-            points.push_back(row);
-        }
-        fichier.close();
+    if(option){
+        getline(option,values);
+        AXES_VALUES_X[0] = atof(values.c_str());
+        getline(option,values);
+        AXES_VALUES_X[1] = atof(values.c_str());
+        getline(option,values);
+        AXES_VALUES_X[2] = atof(values.c_str());
+        getline(option,values);
+        nbFonction = atof(values.c_str());
+        option.close();
     }
     else{
         cout << "Erreur" <<endl;
     }
-
-    set_point(screen, points, AXES_COLOR,ligne);
-
+    if(fichier){
+        while(getline(fichier,values)){
+            ligne++;
+            if(values[0] == '#'){
+                fonctions.push_back(points);
+                points.clear();
+            }else{
+                double x = atof(values.c_str());
+                getline(fichier,values);
+                double y = atof(values.c_str());
+                vector<double> row;
+                row.push_back(x);
+                row.push_back(y);
+                points.push_back(row);
+            }
+        }
+        fichier.close();
+    }else{
+        cout << "Erreur" <<endl;
+    }
     int move_cursor=0, my_x=0, my_y=0, new_x=0, new_y=0;
-            bool precisionMode = false;
-
-    while (continuer){
+            bool precisionMode = false, start = true;
+    AXES_CENTER[0] = -1*(AXES_VALUES_X[0])*x_unity+AXES_MARGE;
+    AXES_CENTER[1] = -1*(-1*(AXES_VALUES_Y[1])*y_unity-AXES_MARGE);
+    while (continuer){  //EVENTS
         if( SDL_Flip( screen ) == -1 ) {
             return EXIT_FAILURE;
         }
@@ -504,6 +519,7 @@ int main( int argc, char *argv[ ] ){
                     break;
                 }
             case SDL_MOUSEMOTION:
+                start = false;
                 new_x = event.motion.x;
                 new_y = event.motion.y;
                 if(move_cursor == 1){
@@ -516,11 +532,22 @@ int main( int argc, char *argv[ ] ){
         }
 
         SDL_FillRect(screen, NULL, 0xf0f0f0); // 0xFFFFFF = white in RGB, NULL = full window
-        set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, false);
-        set_point(screen,points, AXES_COLOR, ligne);
+        set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, start);
+        //set_point(screen,fonctions[1], AXES_COLOR, fonctions[1].size());
         if(precisionMode)pointer_precision(screen,AXES_COLOR);
-        relierP(screen, points, AXES_COLOR, ligne);
-        debugg(screen, x_unity);
+        for(double i=0; i<fonctions.size()/2 ; i++){ // dégradé rouge -> bleu
+            Uint8 coloration = 0xff;
+            Uint8 pas = coloration/(fonctions.size());
+            Uint32 coul = (coloration-pas*i)*0x010000+(pas*i)*0x000100;
+            relierP(screen, fonctions[i],coul, fonctions[i].size());
+        }
+        for(double i=fonctions.size()/2; i<fonctions.size() ; i++){ // dégradé bleu -> rouge
+            Uint8 coloration = 0xff;
+            Uint8 pas = coloration/(fonctions.size());
+            Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
+            relierP(screen, fonctions[i],coul, fonctions[i].size());
+        }
+        if(nbFonction>0) debugg(screen, nbFonction==fonctions[0].size()); else debugg(screen, 0);
         //SDL_Flip(screen);
     }
 	//Libération des surfaces
