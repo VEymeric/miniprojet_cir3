@@ -8,8 +8,8 @@
 #include <math.h>
 #include <vector>
 using namespace std;
-const float SCREEN_WIDTH = 600;
-const float SCREEN_HEIGHT = 600;
+float SCREEN_WIDTH = 600;
+float SCREEN_HEIGHT = 600;
 const int SCREEN_BPP = 32;
 
 const int AXES_ARROW = 5;
@@ -180,13 +180,13 @@ void ligne(int x1, int y1, int x2, int y2, Uint32 coul){
 void pointer_precision(SDL_Surface* screen, const int* color){
     int x = event.motion.x;
     if(x>=AXES_MARGE && x<=SCREEN_WIDTH-AXES_MARGE){
-        for(int i=AXES_MARGE;i<SCREEN_HEIGHT-AXES_MARGE;i++){
+        for(int i=AXES_MARGE;i<SCREEN_HEIGHT-AXES_MARGE;i+=3){
             putpixel(screen,x, i, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
     }
     int y = event.motion.y;
     if(y>=AXES_MARGE && y<=SCREEN_HEIGHT-AXES_MARGE){
-        for(int i=AXES_MARGE;i<SCREEN_WIDTH-AXES_MARGE;i++){
+        for(int i=AXES_MARGE;i<SCREEN_WIDTH-AXES_MARGE;i+=3){
             putpixel(screen,i, y, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
         }
     }
@@ -415,7 +415,7 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
 
 int main( int argc, char *argv[ ] ){
     fstream fichier("fichierResultat.txt");
-    fstream option("option.txt");
+    fstream option("mesoptions.txt");
 
     int  ligne=0;
     string values;
@@ -437,7 +437,7 @@ int main( int argc, char *argv[ ] ){
     atexit( SDL_Quit );
     police = TTF_OpenFont("arial.ttf", 10);
     //Mise en place de l'écran
-	screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT+1, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF );
+	screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT+1, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE);
     if( screen == NULL ){
         printf( "Can't set video mode: %s\n", SDL_GetError( ) );
         return EXIT_FAILURE;
@@ -447,18 +447,25 @@ int main( int argc, char *argv[ ] ){
 	SDL_WM_SetCaption( "LA SDL C RIGOLO", NULL ); //titre fenetre
     set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, true);
     if(option){
+        int options[3];
         getline(option,values);
-        AXES_VALUES_X[0] = atof(values.c_str());
+        options[0] = atof(values.c_str());
         getline(option,values);
-        AXES_VALUES_X[1] = atof(values.c_str());
+        options[1] = atof(values.c_str());
         getline(option,values);
-        AXES_VALUES_X[2] = atof(values.c_str());
+        options[2] = atof(values.c_str());
         getline(option,values);
         nbFonction = atof(values.c_str());
+        if(options[0]<options[1]){
+            AXES_VALUES_X[0] = options[0];
+            AXES_VALUES_X[1] = options[1];
+        }
+        if(options[2] >= 1)AXES_VALUES_X[2] = options[2];
         option.close();
+
     }
     else{
-        cout << "Erreur" <<endl;
+        cout << "Erreur : options introuvables" <<endl;
     }
     if(fichier){
         while(getline(fichier,values)){
@@ -478,7 +485,7 @@ int main( int argc, char *argv[ ] ){
         }
         fichier.close();
     }else{
-        cout << "Erreur" <<endl;
+        cout << "Erreur: Aucune valeur detectees." <<endl;
     }
     int move_cursor=0, my_x=0, my_y=0, new_x=0, new_y=0;
             bool precisionMode = false, start = true;
@@ -494,6 +501,11 @@ int main( int argc, char *argv[ ] ){
             case SDL_QUIT:
                 continuer = 0;
                 break;
+            case SDL_VIDEORESIZE: //User resized window
+                screen = SDL_SetVideoMode( event.resize.w, event.resize.h, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE);
+                SCREEN_WIDTH = screen->w;
+                SCREEN_HEIGHT = screen->h;
+                break;
             case SDL_MOUSEBUTTONDOWN:
                 if( event.button.button == SDL_BUTTON_LEFT ){
                     move_cursor = 1;
@@ -506,11 +518,17 @@ int main( int argc, char *argv[ ] ){
                     break;
                 }
                 if( event.button.button == SDL_BUTTON_WHEELUP ){
-                    if(ZOOM < 2)ZOOM += 0.1;
+                    if(ZOOM < 2){
+                        ZOOM += 0.1;
+                        //float distanceCentre = (event.motion.x-SCREEN_WIDTH/2)*0.1;
+                        //AXES_CENTER[0] -= distanceCentre  ;
+                    }
                     break;
                 }
                 if( event.button.button == SDL_BUTTON_WHEELDOWN ){
                     if(ZOOM > 0.5)ZOOM -= 0.1;
+                        //float distanceCentre = (event.motion.x-SCREEN_WIDTH/2)*0.1;
+                        //AXES_CENTER[0] += distanceCentre  ;
                     break;
                 }
             case SDL_MOUSEBUTTONUP:
@@ -547,8 +565,7 @@ int main( int argc, char *argv[ ] ){
             Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
-        debugg(screen, fonctions.size());
-        //SDL_Flip(screen);
+        debugg(screen, SCREEN_WIDTH);
     }
 	//Libération des surfaces
 	SDL_FreeSurface( message );
