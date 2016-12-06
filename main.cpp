@@ -294,6 +294,9 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     //float   marge_max = AXES_VALUES_X[1];
     float position_x0 = (int)AXES_CENTER[0];
     float position_y0 = (int)AXES_CENTER[1];
+    if (x_unity<=3) x_unity =3;
+    if (y_unity<=3) y_unity =3;
+
     { /* MES X TAVU */
     // PARTIE AVANT 0
     for(float i=position_x0; i>=AXES_MARGE; i-=x_unity*AXES_VALUES_X[2]){ // baton baton !
@@ -585,7 +588,7 @@ int main( int argc, char *argv[ ] ){
             Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
-        debugg(screen, event.motion.x-AXES_CENTER[0]);
+        debugg(screen, x_unity);
     }
 	//Libération des surfaces
 	SDL_FreeSurface( message );
