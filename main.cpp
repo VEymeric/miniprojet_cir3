@@ -300,7 +300,7 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
         if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
             for(float taille=0; taille<=AXES_ARROW; taille++){
                 putpixel(screen,i, taille+AXES_MARGE, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
-                    if(AXES_CENTER[1]>AXES_MARGE && AXES_CENTER[1]<SCREEN_HEIGHT-AXES_MARGE){
+                if(AXES_CENTER[1]>AXES_MARGE && AXES_CENTER[1]<SCREEN_HEIGHT-AXES_MARGE){
                     putpixel(screen,i, (int)position_y0+taille, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                     putpixel(screen,i, (int)position_y0-taille, SDL_MapRGB(screen->format,color[0], color[1], color[2]));
                 }
@@ -376,20 +376,30 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     /* FIN DE MES Y TAVU */
     }
     { //TEXTE TOP
-        for(int i=position_x0; i>=AXES_MARGE; i-=x_unity){
-            if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
-                char yolo[100];
-                    sprintf(yolo, "%d", (int)(((float)i-position_x0)/x_unity));
-                    texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
-                    apply_surface( i-texte->w/2+1, AXES_MARGE-15, texte, screen );
-                }
-            }
-        for(float i=position_x0; i<=SCREEN_WIDTH-AXES_MARGE; i+=x_unity){
+        for(int i=position_x0; i>=AXES_MARGE; i-=x_unity*AXES_VALUES_X[2]){
             if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
                 char yolo[100];
                 sprintf(yolo, "%d", (int)(((float)i-position_x0)/x_unity));
                 texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
                 apply_surface( i-texte->w/2+1, AXES_MARGE-15, texte, screen );
+                int beauty = texte->w;
+                while(2*beauty>x_unity*AXES_VALUES_X[2] && i<=SCREEN_WIDTH-AXES_MARGE){
+                   i-= x_unity*AXES_VALUES_X[2];
+                   beauty -=  x_unity*AXES_VALUES_X[2];
+                }
+            }
+        }
+        for(float i=position_x0; i<=SCREEN_WIDTH-AXES_MARGE; i+=x_unity*AXES_VALUES_X[2]){
+            if(i<=SCREEN_WIDTH-AXES_MARGE && i>=AXES_MARGE){
+                char yolo[100];
+                sprintf(yolo, "%d", (int)(((float)i-position_x0)/x_unity));
+                texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
+                apply_surface( i-texte->w/2+1, AXES_MARGE-15, texte, screen );
+                int beauty = texte->w;
+                while(2*beauty>x_unity*AXES_VALUES_X[2] && i<=SCREEN_WIDTH-AXES_MARGE){
+                   i+= x_unity*AXES_VALUES_X[2];
+                   beauty -=  x_unity*AXES_VALUES_X[2];
+                }
             }
         }
     }
@@ -400,6 +410,11 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
                 sprintf(yolo, "%d", (int)(-1*((float)i-position_y0)/y_unity));
                 texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
                 apply_surface(AXES_MARGE-15, i-texte->h/2+1, texte, screen );
+                int beauty = texte->h;
+                while(2*beauty>y_unity*AXES_VALUES_Y[2] && i<=SCREEN_HEIGHT-AXES_MARGE){
+                   i-= y_unity*AXES_VALUES_Y[2];
+                   beauty -=  y_unity*AXES_VALUES_Y[2];
+                }
             }
         }
         for(float i=position_y0; i<=SCREEN_WIDTH-AXES_MARGE; i+=y_unity){
@@ -408,6 +423,11 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
                 sprintf(yolo, "%d", (int)(-1*((float)i-position_y0)/y_unity));
                 texte = TTF_RenderText_Blended(police, yolo, {200,100,0});
                 apply_surface(AXES_MARGE-15, i-texte->h/2, texte, screen );
+                int beauty = texte->h;
+                while(2*beauty>y_unity*AXES_VALUES_Y[2] && i<=SCREEN_HEIGHT-AXES_MARGE){
+                   i+= y_unity*AXES_VALUES_Y[2];
+                   beauty -=  y_unity*AXES_VALUES_Y[2];
+                }
             }
         }
     }
@@ -520,15 +540,15 @@ int main( int argc, char *argv[ ] ){
                 if( event.button.button == SDL_BUTTON_WHEELUP ){
                     if(ZOOM < 2){
                         ZOOM += 0.1;
-                        //float distanceCentre = (event.motion.x-SCREEN_WIDTH/2)*0.1;
-                        //AXES_CENTER[0] -= distanceCentre  ;
+                        //AXES_CENTER[0] -= 0.05*((float)event.motion.x-AXES_CENTER[0])  ;
                     }
                     break;
                 }
                 if( event.button.button == SDL_BUTTON_WHEELDOWN ){
-                    if(ZOOM > 0.5)ZOOM -= 0.1;
-                        //float distanceCentre = (event.motion.x-SCREEN_WIDTH/2)*0.1;
-                        //AXES_CENTER[0] += distanceCentre  ;
+                    if(ZOOM > 0.5){
+                        ZOOM -= 0.1;
+                        //AXES_CENTER[0] += 0.1*((float)event.motion.x-AXES_CENTER[0])  ;
+                    }
                     break;
                 }
             case SDL_MOUSEBUTTONUP:
@@ -565,7 +585,7 @@ int main( int argc, char *argv[ ] ){
             Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
-        debugg(screen, SCREEN_WIDTH);
+        debugg(screen, event.motion.x-AXES_CENTER[0]);
     }
 	//Libération des surfaces
 	SDL_FreeSurface( message );
