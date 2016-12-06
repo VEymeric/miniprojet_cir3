@@ -119,64 +119,31 @@ void echangerEntiers(int* x, int* y){
   *y = t;
 }
 Uint32 obtenirPixel(SDL_Surface *surface, int x, int y){
-
     /*nbOctetsParPixel représente le nombre d'octets utilisés pour stocker un pixel.
-
     En multipliant ce nombre d'octets par 8 (un octet = 8 bits), on obtient la profondeur de couleur
-
     de l'image : 8, 16, 24 ou 32 bits.*/
-
     int nbOctetsParPixel = surface->format->BytesPerPixel;
-
     /* Ici p est l'adresse du pixel que l'on veut connaitre */
-
     /*surface->pixels contient l'adresse du premier pixel de l'image*/
-
     Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * nbOctetsParPixel;
-
-
     /*Gestion différente suivant le nombre d'octets par pixel de l'image*/
-
-    switch(nbOctetsParPixel)
-
-    {
-
+    switch(nbOctetsParPixel){
         case 1:
-
             return *p;
-
-
         case 2:
-
             return *(Uint16 *)p;
-
-
         case 3:
-
             /*Suivant l'architecture de la machine*/
-
             if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-
                 return p[0] << 16 | p[1] << 8 | p[2];
-
             else
-
                 return p[0] | p[1] << 8 | p[2] << 16;
-
-
         case 4:
-
             return *(Uint32 *)p;
-
-
         /*Ne devrait pas arriver, mais évite les erreurs*/
-
         default:
-
             return 0;
-
     }
-
 }
 void ligne(int x1, int y1, int x2, int y2, Uint32 coul){
   int d, dx, dy, aincr, bincr, xincr, yincr, x, y;
@@ -524,19 +491,19 @@ void more_info(SDL_Surface* screen, vector<string> namefonctions, vector<Uint32>
     int y = event.motion.y;
     if(x< AXES_MARGE || x>SCREEN_WIDTH-AXES_MARGE || y<AXES_MARGE || y>SCREEN_HEIGHT-AXES_MARGE) return;
     Uint32 yolo = getPixel(screen,x,y);
-    for(int i=0; i<namefonctions.size();i++){
+    for(int i=0; i<int(namefonctions.size());i++){
         if(yolo == colorFonctions[i]){
             functionNumber = i;
         }
     }
-    string testty = "robert" ;
     if(functionNumber == -1){
         sprintf(xy, "%d",namefonctions.size());
         texte = TTF_RenderText_Solid(police, xy, {200,0,0});
     }else{
         sprintf(xy, "%s", namefonctions[functionNumber].c_str());
         int col = colorFonctions[functionNumber];
-        texte = TTF_RenderText_Solid(police, xy, {col>>16,col>>8,col});
+        Uint8 myColor[3] = {(Uint8)(col>>16),(Uint8)(col>>8),(Uint8)col};
+        texte = TTF_RenderText_Solid(police, xy, {myColor[0],myColor[1],myColor[2]});
     }
     apply_surface(50, SCREEN_HEIGHT-texte->h-5, texte, screen );
 }
