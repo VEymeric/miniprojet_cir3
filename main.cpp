@@ -588,7 +588,7 @@ int main( int argc, char *argv[ ] ){
             Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
-        debugg(screen, x_unity);
+        debugg(screen, fonctions.size());
     }
 	//Libération des surfaces
 	SDL_FreeSurface( message );
