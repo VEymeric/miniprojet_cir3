@@ -261,9 +261,27 @@ void SDL_PutPixel32(SDL_Surface *surface, int x, int y, Uint32 pixel){
     Uint8 *p = (Uint8*)surface->pixels + y * surface->pitch + x * 4;
     *(Uint32*)p = pixel;
 }
-Uint32 SDL_GetPixel32(SDL_Surface *surface, int x, int y){
-    Uint8 *p = (Uint8*)surface->pixels + y * surface->pitch + x * 4;
-    return *(Uint32*)p;
+Uint32 getPixel(SDL_Surface * surface, int x, int y)
+{
+  int bpp = surface->format->BytesPerPixel;
+  Uint8 *p = (Uint8 *) surface->pixels + y * surface->pitch + x * bpp;
+
+  switch (bpp) {
+  case 1:
+    return *p;
+  case 2:
+    return *(Uint16 *) p;
+  case 3:
+    if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+      return p[0] << 16 | p[1] << 8 | p[2];
+    else
+      return p[0] | p[1] << 8 | p[2] << 16;
+  case 4:
+    return *(Uint32 *) p;
+
+  default:
+    return 0;
+  }
 }
 void Line(SDL_Surface* surf,int x1,int y1, int x2,int y2,Uint32 couleur){
   int x,y;
@@ -504,7 +522,8 @@ void more_info(SDL_Surface* screen, vector<string> namefonctions, vector<Uint32>
     int functionNumber = -1;
     int x = event.motion.x;
     int y = event.motion.y;
-    Uint32 yolo = SDL_GetPixel32(screen,x,y);
+    if(x< AXES_MARGE || x>SCREEN_WIDTH-AXES_MARGE || y<AXES_MARGE || y>SCREEN_HEIGHT-AXES_MARGE) return;
+    Uint32 yolo = getPixel(screen,x,y);
     for(int i=0; i<namefonctions.size();i++){
         if(yolo == colorFonctions[i]){
             functionNumber = i;
