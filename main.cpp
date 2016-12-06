@@ -7,6 +7,8 @@
 #include <string>
 #include <math.h>
 #include <vector>
+#include <map>
+
 using namespace std;
 float SCREEN_WIDTH = 600;
 float SCREEN_HEIGHT = 600;
@@ -114,6 +116,66 @@ void echangerEntiers(int* x, int* y){
   int t = *x;
   *x = *y;
   *y = t;
+}
+Uint32 obtenirPixel(SDL_Surface *surface, int x, int y){
+
+    /*nbOctetsParPixel représente le nombre d'octets utilisés pour stocker un pixel.
+
+    En multipliant ce nombre d'octets par 8 (un octet = 8 bits), on obtient la profondeur de couleur
+
+    de l'image : 8, 16, 24 ou 32 bits.*/
+
+    int nbOctetsParPixel = surface->format->BytesPerPixel;
+
+    /* Ici p est l'adresse du pixel que l'on veut connaitre */
+
+    /*surface->pixels contient l'adresse du premier pixel de l'image*/
+
+    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * nbOctetsParPixel;
+
+
+    /*Gestion différente suivant le nombre d'octets par pixel de l'image*/
+
+    switch(nbOctetsParPixel)
+
+    {
+
+        case 1:
+
+            return *p;
+
+
+        case 2:
+
+            return *(Uint16 *)p;
+
+
+        case 3:
+
+            /*Suivant l'architecture de la machine*/
+
+            if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+
+                return p[0] << 16 | p[1] << 8 | p[2];
+
+            else
+
+                return p[0] | p[1] << 8 | p[2] << 16;
+
+
+        case 4:
+
+            return *(Uint32 *)p;
+
+
+        /*Ne devrait pas arriver, mais évite les erreurs*/
+
+        default:
+
+            return 0;
+
+    }
+
 }
 void ligne(int x1, int y1, int x2, int y2, Uint32 coul){
   int d, dx, dy, aincr, bincr, xincr, yincr, x, y;
@@ -256,11 +318,11 @@ void Line(SDL_Surface* surf,int x1,int y1, int x2,int y2,Uint32 couleur){
     SDL_PutPixel32(surf,x1,y1,couleur);
     SDL_PutPixel32(surf,x2,y2,couleur);
 }
-void set_point(SDL_Surface* screen,vector< vector<double> >points, const int* color, int ligne){
-    if(points[0].size() == 0)return;
-    for(int z = 0; z < ligne; ++z){
-        double x = points[z][0];
-        double y = points[z][1];
+void set_point(SDL_Surface* screen,map<float,float>points, const int* color, int ligne){
+    if(points.size() == 0)return;
+    for(std::map<float, float>::iterator it=points.begin(); it!=points.end(); ++it){
+        float x = it->first;
+        float y = it->second;
         int r = 0;
         for(int i=-r; i <= r ; i++){
             for(int j=-r; j <= r ; j++){
@@ -271,16 +333,15 @@ void set_point(SDL_Surface* screen,vector< vector<double> >points, const int* co
         }
     }
 }
-void relierP(SDL_Surface* screen,vector< vector<double> >points, Uint32 coul, int ligne){
-    //float x_min = -1*(AXES_CENTER[0]-AXES_MARGE)/x_unity;
-    //float x_max = (SCREEN_WIDTH-AXES_CENTER[0]-AXES_MARGE)/x_unity;
-    //float y_max = (AXES_CENTER[1]-AXES_MARGE)/y_unity;
-    //float y_min = -1*(SCREEN_HEIGHT-AXES_CENTER[1]-AXES_MARGE)/y_unity;
-    for(int z = 0; z < ligne-1; ++z){
-        double x1 = AXES_CENTER[0]+points[z][0]*x_unity;
-        double x2 = AXES_CENTER[0]+points[z+1][0]*x_unity;
-        double y1 = AXES_CENTER[1]-points[z][1]*y_unity;
-        double y2 = AXES_CENTER[1]-points[z+1][1]*y_unity;
+void relierP(SDL_Surface* screen,map<float,float>points, Uint32 coul, int ligne){
+    for(std::map<float, float>::iterator it=points.begin(); it!=points.end(); ++it){
+        double x1 = AXES_CENTER[0]+it->first*x_unity;
+        double y1 = AXES_CENTER[1]-it->second*y_unity;
+        it++;
+        if(it==points.end()) return; //horrible mais solution de secours.
+        double x2 = AXES_CENTER[0]+it->first*x_unity;
+        double y2 = AXES_CENTER[1]-it->second*y_unity;
+        it--;
         if(x1>=AXES_MARGE && x2<=SCREEN_WIDTH-AXES_MARGE){
             if(y1<=SCREEN_HEIGHT-AXES_MARGE && y1 >= AXES_MARGE  && y2<=SCREEN_HEIGHT-AXES_MARGE && y2 >= AXES_MARGE)
                 Line(screen,x1,y1,x2,y2,coul);
@@ -296,6 +357,9 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
     float position_y0 = (int)AXES_CENTER[1];
     if (x_unity<=3) x_unity =3;
     if (y_unity<=3) y_unity =3;
+    AXES_VALUES_Y[0] = AXES_VALUES_X[0];
+    AXES_VALUES_Y[1] = AXES_VALUES_X[1];
+    AXES_VALUES_Y[2] = AXES_VALUES_X[2];
 
     { /* MES X TAVU */
     // PARTIE AVANT 0
@@ -435,7 +499,27 @@ void set_axes(SDL_Surface* screen, int x, int y, const int* color, bool start){
         }
     }
 }
-
+void more_info(SDL_Surface* screen, vector<string> namefonctions, vector<Uint32> colorFonctions){
+    char xy[100];
+    int functionNumber = -1;
+    int x = event.motion.x;
+    int y = event.motion.y;
+    Uint32 yolo = SDL_GetPixel32(screen,x,y);
+    for(int i=0; i<namefonctions.size();i++){
+        if(yolo == colorFonctions[i]){
+            functionNumber = i;
+        }
+    }
+    string testty = "robert" ;
+    if(functionNumber == -1){
+        sprintf(xy, "%d",namefonctions.size());
+        texte = TTF_RenderText_Solid(police, xy, {200,0,0});
+    }else{
+        sprintf(xy, "%s", namefonctions[functionNumber].c_str());
+        texte = TTF_RenderText_Solid(police, xy, {colorFonctions[functionNumber]>>16,colorFonctions[functionNumber]>>8,colorFonctions[functionNumber]});
+    }
+    apply_surface(50, SCREEN_HEIGHT-texte->h-5, texte, screen );
+}
 int main( int argc, char *argv[ ] ){
     fstream fichier("fichierResultat.txt");
     fstream option("mesoptions.txt");
@@ -444,8 +528,10 @@ int main( int argc, char *argv[ ] ){
     string values;
     //float min=0,max=0,
     float nbFonction=0;
-    vector< vector<double> >points;
-    vector<vector< vector<double> > >fonctions;
+    map<float, float>points;
+    vector<map<float, float>>fonctions;
+    vector<Uint32> colorFonctions;
+    vector<string> nameFonctions;
 
     bool continuer = true;
     SDL_Surface *screen;
@@ -470,6 +556,12 @@ int main( int argc, char *argv[ ] ){
 	SDL_WM_SetCaption( "LA SDL C RIGOLO", NULL ); //titre fenetre
     set_axes(screen, AXES_CENTER[0], AXES_CENTER[1], AXES_COLOR, true);
     if(option){
+        getline(option,values);
+        nbFonction = atof(values.c_str());
+        for(int i=0; i<nbFonction ;i++){
+            getline(option,values);
+            nameFonctions.push_back(values);
+        }
         int options[3];
         getline(option,values);
         options[0] = atof(values.c_str());
@@ -477,8 +569,6 @@ int main( int argc, char *argv[ ] ){
         options[1] = atof(values.c_str());
         getline(option,values);
         options[2] = atof(values.c_str());
-        getline(option,values);
-        nbFonction = atof(values.c_str());
         if(options[0]<options[1]){
             AXES_VALUES_X[0] = options[0];
             AXES_VALUES_X[1] = options[1];
@@ -500,10 +590,7 @@ int main( int argc, char *argv[ ] ){
                 double x = atof(values.c_str());
                 getline(fichier,values);
                 double y = atof(values.c_str());
-                vector<double> row;
-                row.push_back(x);
-                row.push_back(y);
-                points.push_back(row);
+                points[x] = y;
             }
         }
         fichier.close();
@@ -511,7 +598,7 @@ int main( int argc, char *argv[ ] ){
         cout << "Erreur: Aucune valeur detectees." <<endl;
     }
     int move_cursor=0, my_x=0, my_y=0, new_x=0, new_y=0;
-            bool precisionMode = false, start = true;
+    bool precisionMode = false, start = true;
     AXES_CENTER[0] = -1*(AXES_VALUES_X[0])*x_unity+AXES_MARGE;
     AXES_CENTER[1] = -1*(-1*(AXES_VALUES_Y[1])*y_unity-AXES_MARGE);
     while (continuer){  //EVENTS
@@ -521,7 +608,7 @@ int main( int argc, char *argv[ ] ){
         SDL_WaitEvent(&event);
         switch(event.type)
         {
-            case SDL_QUIT:
+            case SDL_QUIT: //User close window
                 continuer = 0;
                 break;
             case SDL_VIDEORESIZE: //User resized window
@@ -580,15 +667,17 @@ int main( int argc, char *argv[ ] ){
             Uint8 coloration = 0xff;
             Uint8 pas = coloration/(fonctions.size());
             Uint32 coul = (coloration-pas*i)*0x010000+(pas*i)*0x000100;
+            colorFonctions.push_back(coul);
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
         for(double i=fonctions.size()/2; i<fonctions.size() ; i++){ // dégradé bleu -> rouge
             Uint8 coloration = 0xff;
             Uint8 pas = coloration/(fonctions.size());
             Uint32 coul = (coloration-pas*i)*0x000100+(pas*i)*0x000001;
+            colorFonctions.push_back(coul);
             relierP(screen, fonctions[i],coul, fonctions[i].size());
         }
-        debugg(screen, fonctions.size());
+        more_info(screen, nameFonctions, colorFonctions);
     }
 	//Libération des surfaces
 	SDL_FreeSurface( message );
