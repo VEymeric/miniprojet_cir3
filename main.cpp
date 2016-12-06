@@ -8,6 +8,7 @@
 #include <math.h>
 #include <vector>
 #include <map>
+#include <algorithm>    // std::sort
 
 using namespace std;
 float SCREEN_WIDTH = 600;
@@ -261,8 +262,7 @@ void SDL_PutPixel32(SDL_Surface *surface, int x, int y, Uint32 pixel){
     Uint8 *p = (Uint8*)surface->pixels + y * surface->pitch + x * 4;
     *(Uint32*)p = pixel;
 }
-Uint32 getPixel(SDL_Surface * surface, int x, int y)
-{
+Uint32 getPixel(SDL_Surface * surface, int x, int y){
   int bpp = surface->format->BytesPerPixel;
   Uint8 *p = (Uint8 *) surface->pixels + y * surface->pitch + x * bpp;
 
@@ -535,7 +535,8 @@ void more_info(SDL_Surface* screen, vector<string> namefonctions, vector<Uint32>
         texte = TTF_RenderText_Solid(police, xy, {200,0,0});
     }else{
         sprintf(xy, "%s", namefonctions[functionNumber].c_str());
-        texte = TTF_RenderText_Solid(police, xy, {colorFonctions[functionNumber]>>16,colorFonctions[functionNumber]>>8,colorFonctions[functionNumber]});
+        int col = colorFonctions[functionNumber];
+        texte = TTF_RenderText_Solid(police, xy, {col>>16,col>>8,col});
     }
     apply_surface(50, SCREEN_HEIGHT-texte->h-5, texte, screen );
 }
@@ -593,6 +594,7 @@ int main( int argc, char *argv[ ] ){
             AXES_VALUES_X[1] = options[1];
         }
         if(options[2] >= 1)AXES_VALUES_X[2] = options[2];
+        std::sort ( nameFonctions.begin(),  nameFonctions.end());
         option.close();
 
     }
